@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% set title = t('leaderboard_title') %}
+{% block content %}
+<section class="hero">
+  <div class="eyebrow">🏆 {{ t('leaderboard_title') }}</div>
+  <h1>{{ t('leaderboard_desc') }}</h1>
+  <p class="muted" style="max-width:760px; margin-top:12px">{{ t('instructions') }}</p>
+</section>
+
+<section class="card">
+  <h3>{{ t('leaderboard_title') }}</h3>
+  <p class="muted">{{ t('leaderboard_desc') }}</p>
+  <div id="board" class="list"></div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script>
+  async function loadBoard(){
+    const board = document.getElementById('board');
+    board.innerHTML = `<div class="notice">...</div>`;
+    const res = await fetch('/api/leaderboard');
+    const data = await res.json();
+    if (data.error){
+      board.innerHTML = `<div class="notice err">${data.error}</div>`;
+      return;
+    }
+    if (!data.items || !data.items.length){
+      board.innerHTML = `<div class="notice">{{ t('no_user') }}</div>`;
+      return;
+    }
+    board.innerHTML = data.items.map(item => `
+      <div class="entry">
+        <div class="entry-left">
+          <img class="small-avatar" src="${item.avatar_url}" alt="avatar">
+          <div style="min-width:0">
+            <div class="name">#${item.rank} · ${item.display_name}</div>
+            <div class="sub">${item.role || '—'} · ${item.username}</div>
+          </div>
+        </div>
+        <div class="badge">${money(item.balance)} {{ t('balance') }}</div>
+      </div>
+    `).join('');
+  }
+  loadBoard();
+</script>
+{% endblock %}

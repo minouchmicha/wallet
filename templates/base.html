@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="{{ 'ar' if lang == 'ar' else 'en' }}" dir="{{ 'rtl' if lang == 'ar' else 'ltr' }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ title if title is defined else site_name }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#0b0e17;
+      --panel:rgba(255,255,255,.04);
+      --panel-2:rgba(255,255,255,.06);
+      --border:rgba(255,255,255,.08);
+      --text:#fff;
+      --muted:#a0a5b5;
+      --primary:#5c67e6;
+      --success:#58e2a8;
+      --danger:#ff708b;
+      --shadow:0 18px 60px rgba(0,0,0,.28);
+      --radius:24px;
+      --font:'Inter',sans-serif;
+    }
+    html[lang="ar"]{ --font:'Tajawal',sans-serif; }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:var(--font);
+      background:
+        radial-gradient(circle at top left, rgba(92,103,230,.28), transparent 26%),
+        radial-gradient(circle at bottom right, rgba(41,143,255,.16), transparent 28%),
+        var(--bg);
+      color:var(--text);
+      min-height:100vh;
+      overflow-x:hidden;
+    }
+    a{color:inherit}
+    .glow{
+      position:fixed;
+      border-radius:50%;
+      filter:blur(120px);
+      z-index:-1;
+      pointer-events:none;
+      animation:pulse 8s ease-in-out infinite alternate;
+    }
+    .glow.one{width:420px;height:420px;background:rgba(92,103,230,.18);top:-120px;left:-120px}
+    .glow.two{width:540px;height:540px;background:rgba(41,143,255,.12);bottom:-220px;right:-200px;animation-delay:-3s}
+    @keyframes pulse{from{transform:scale(1);opacity:.7}to{transform:scale(1.08);opacity:1}}
+
+    .topbar{
+      position:sticky; top:0; z-index:50;
+      display:flex; align-items:center; justify-content:space-between;
+      gap:18px;
+      padding:16px 26px;
+      background:rgba(255,255,255,.03);
+      backdrop-filter:blur(14px);
+      border-bottom:1px solid var(--border);
+    }
+    .brand{
+      display:flex; align-items:center; gap:12px; font-weight:800; font-size:20px;
+    }
+    .brand img{
+      width:40px; height:40px; border-radius:14px; object-fit:cover;
+      box-shadow:0 10px 24px rgba(0,0,0,.22);
+    }
+    .top-actions{display:flex; flex-wrap:wrap; gap:10px; align-items:center}
+    .btn, button.btn, a.btn{
+      display:inline-flex; align-items:center; justify-content:center; gap:8px;
+      border:none; text-decoration:none; cursor:pointer;
+      color:var(--text);
+      padding:12px 18px;
+      border-radius:14px;
+      font-weight:700;
+      background:linear-gradient(135deg, rgba(92,103,230,.26), rgba(88,226,168,.14));
+      border:1px solid rgba(255,255,255,.08);
+      box-shadow:var(--shadow);
+      transition:.25s ease;
+    }
+    .btn:hover{transform:translateY(-2px)}
+    .btn.secondary{background:rgba(255,255,255,.04)}
+    .btn.danger{background:rgba(255,112,139,.12)}
+    .btn.ghost{background:rgba(255,255,255,.02); box-shadow:none}
+    .lang{padding:10px 14px; border-radius:999px}
+    .container{
+      width:min(1200px, calc(100% - 32px));
+      margin:24px auto 40px;
+      display:grid;
+      grid-template-columns:280px 1fr;
+      gap:20px;
+    }
+    .sidebar,.card{
+      background:var(--panel);
+      border:1px solid var(--border);
+      border-radius:28px;
+      backdrop-filter:blur(18px);
+      box-shadow:var(--shadow);
+    }
+    .sidebar{
+      padding:18px;
+      position:sticky;
+      top:88px;
+      align-self:start;
+    }
+    .profile{
+      display:flex; align-items:center; gap:14px;
+      padding:10px 10px 18px;
+      border-bottom:1px solid rgba(255,255,255,.06);
+    }
+    .avatar{
+      width:62px; height:62px; border-radius:20px; object-fit:cover;
+      border:1px solid rgba(255,255,255,.08);
+    }
+    .profile .name{font-weight:800; font-size:1.05rem}
+    .profile .meta{color:var(--muted); margin-top:4px; font-size:.92rem; word-break:break-word}
+    .nav{
+      display:grid;
+      gap:8px;
+      margin-top:16px;
+    }
+    .nav a{
+      text-decoration:none;
+      display:flex; align-items:center; justify-content:space-between;
+      padding:13px 14px;
+      border-radius:16px;
+      background:rgba(255,255,255,.03);
+      border:1px solid transparent;
+      color:var(--text);
+    }
+    .nav a:hover,.nav a.active{
+      background:rgba(92,103,230,.14);
+      border-color:rgba(92,103,230,.22);
+    }
+    .sidebar-foot{
+      margin-top:16px;
+      padding-top:16px;
+      border-top:1px solid rgba(255,255,255,.06);
+      display:grid;
+      gap:10px;
+    }
+    .chip{
+      display:inline-flex; align-items:center; gap:8px;
+      width:fit-content;
+      padding:10px 14px;
+      border-radius:999px;
+      background:rgba(255,255,255,.04);
+      color:var(--muted);
+      border:1px solid rgba(255,255,255,.06);
+      font-size:.92rem;
+    }
+    .main{display:grid; gap:18px}
+    .hero{
+      padding:28px;
+      border-radius:30px;
+      background:linear-gradient(135deg, rgba(92,103,230,.13), rgba(255,255,255,.03));
+      border:1px solid var(--border);
+      box-shadow:var(--shadow);
+    }
+    .eyebrow{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:9px 14px;
+      border-radius:999px;
+      background:rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.06);
+      color:var(--muted);
+      font-size:.93rem;
+    }
+    h1,h2,h3{margin:0}
+    .hero h1,.hero h2{margin-top:14px; font-size:clamp(2rem, 3vw, 3rem); line-height:1.05}
+    .muted{color:var(--muted); line-height:1.8}
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(12, 1fr);
+      gap:18px;
+    }
+    .card{
+      padding:22px;
+    }
+    .card h3{font-size:1.14rem; margin-bottom:6px}
+    .stat-grid{
+      margin-top:18px;
+      display:grid;
+      grid-template-columns:repeat(2, minmax(0, 1fr));
+      gap:14px;
+    }
+    .stat{
+      padding:16px;
+      border-radius:20px;
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.06);
+    }
+    .stat .k{color:var(--muted); font-size:.92rem}
+    .stat .v{margin-top:8px; font-size:1.18rem; font-weight:800; word-break:break-word}
+    .list{
+      display:grid;
+      gap:12px;
+      margin-top:16px;
+    }
+    .entry{
+      display:flex; align-items:center; justify-content:space-between; gap:16px;
+      padding:16px;
+      border-radius:18px;
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.06);
+    }
+    .entry-left{
+      display:flex; align-items:center; gap:14px; min-width:0;
+    }
+    .small-avatar{
+      width:54px; height:54px; border-radius:18px; object-fit:cover;
+    }
+    .entry .name{font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+    .entry .sub{color:var(--muted); font-size:.92rem; margin-top:4px}
+    .badge{
+      padding:10px 14px;
+      border-radius:999px;
+      background:rgba(92,103,230,.14);
+      border:1px solid rgba(92,103,230,.18);
+      font-weight:800;
+      white-space:nowrap;
+    }
+    .field{display:grid; gap:8px; margin-top:14px}
+    .field label{color:var(--muted); font-size:.93rem}
+    .field input, .field textarea, .field select{
+      width:100%;
+      padding:14px 15px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.08);
+      outline:none;
+      color:var(--text);
+      background:rgba(10,14,26,.56);
+      font:inherit;
+    }
+    .actions{display:flex; flex-wrap:wrap; gap:10px; margin-top:16px}
+    .notice{
+      margin-top:14px;
+      padding:14px 16px;
+      border-radius:18px;
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.06);
+      color:var(--muted);
+      line-height:1.7;
+    }
+    .notice.ok{color:#aff4d5; background:rgba(88,226,168,.08); border-color:rgba(88,226,168,.18)}
+    .notice.err{color:#ffb2c0; background:rgba(255,112,139,.08); border-color:rgba(255,112,139,.18)}
+    .countdown{
+      margin-top:14px;
+      padding:14px 16px;
+      border-radius:18px;
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.06);
+      display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    }
+    .countdown strong{font-size:1.08rem}
+    .two-col{display:grid; grid-template-columns:1fr 1fr; gap:18px}
+    .table{
+      width:100%;
+      border-collapse:collapse;
+      margin-top:16px;
+      overflow:hidden;
+      border-radius:18px;
+    }
+    .table th,.table td{
+      padding:14px 12px;
+      text-align:start;
+      border-bottom:1px solid rgba(255,255,255,.06);
+    }
+    .table th{color:var(--muted); font-weight:700}
+    .table tr:hover td{background:rgba(255,255,255,.02)}
+    .stack{
+      display:grid; gap:12px;
+    }
+    .kv{
+      display:grid; gap:6px;
+      padding:14px 16px;
+      border-radius:18px;
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.06);
+    }
+    .kv .k{color:var(--muted); font-size:.92rem}
+    .kv .v{font-weight:800; word-break:break-word}
+    @media (max-width: 1080px){
+      .container{grid-template-columns:1fr}
+      .sidebar{position:relative; top:0}
+    }
+    @media (max-width: 720px){
+      .topbar{padding:14px 16px; flex-direction:column; align-items:flex-start}
+      .container{width:min(100% - 20px, 1200px)}
+      .card,.sidebar,.hero{border-radius:22px}
+      .stat-grid,.two-col{grid-template-columns:1fr}
+      .entry{align-items:flex-start; flex-direction:column}
+      .badge{align-self:flex-start}
+    }
+  </style>
+</head>
+<body>
+  <div class="glow one"></div>
+  <div class="glow two"></div>
+
+  <header class="topbar">
+    <div class="brand">
+      <img src="https://cdn.discordapp.com/avatars/1294381607742083072/006e1312e81912ff55c9bdc0b9bc9137.webp?size=128" alt="wallet">
+      <span>{{ site_name }}</span>
+    </div>
+    <div class="top-actions">
+      <a class="btn ghost lang" href="{{ url_for('set_lang', code='en' if lang=='ar' else 'ar') }}">{{ t('lang_btn') }}</a>
+      {% if logged_in %}
+        <a class="btn secondary" href="{{ url_for('dashboard') }}">{{ t('dashboard_btn') }}</a>
+        <a class="btn danger" href="{{ url_for('logout') }}">{{ t('logout_btn') }}</a>
+      {% else %}
+        <a class="btn secondary" href="{{ url_for('login_page') }}">{{ t('login_btn') }}</a>
+      {% endif %}
+    </div>
+  </header>
+
+  <div class="container">
+    <aside class="sidebar">
+      <div class="profile">
+        {% if current_user %}
+          <img class="avatar" src="{{ current_user.user.avatar_url }}" alt="avatar">
+          <div>
+            <div class="name">{{ current_user.user.display_name }}</div>
+            <div class="meta">{{ current_user.user.display_name if current_user else t('no_user') }}</div>
+          </div>
+        {% else %}
+          <img class="avatar" src="https://cdn.discordapp.com/embed/avatars/0.png" alt="avatar">
+          <div>
+            <div class="name">{{ t('no_user') }}</div>
+            <div class="meta">{{ t('not_logged_in') }}</div>
+          </div>
+        {% endif %}
+      </div>
+
+      <nav class="nav">
+        <a href="{{ url_for('dashboard') }}" class="{{ 'active' if request.endpoint == 'dashboard' else '' }}"><span>{{ t('overview') }}</span><span>01</span></a>
+        <a href="{{ url_for('daily_page') }}" class="{{ 'active' if request.endpoint == 'daily_page' else '' }}"><span>{{ t('daily_reward') }}</span><span>03</span></a>
+        <a href="{{ url_for('transfer_page') }}" class="{{ 'active' if request.endpoint == 'transfer_page' else '' }}"><span>{{ t('transfer') }}</span><span>04</span></a>
+        <a href="{{ url_for('leaderboard_page') }}" class="{{ 'active' if request.endpoint == 'leaderboard_page' else '' }}"><span>{{ t('top_money') }}</span><span>05</span></a>
+        <a href="{{ url_for('commands_page') }}" class="{{ 'active' if request.endpoint == 'commands_page' else '' }}"><span>{{ t('commands_title') }}</span><span>06</span></a>
+      </nav>
+
+      <div class="sidebar-foot">
+        <div class="chip">👤 <span>{% if current_user %}{{ current_user.user.display_name }}{% else %}{{ t('no_user') }}{% endif %}</span></div>
+        <div class="chip">🌐 <span>{{ 'AR' if lang == 'ar' else 'EN' }}</span></div>
+      </div>
+    </aside>
+
+    <main class="main">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  <script>
+    const LANG = {{ lang|tojson }};
+    const T = {{ translations|tojson }};
+    function tr(key){ return (T[LANG] && T[LANG][key]) ? T[LANG][key] : key; }
+    function money(v){ return new Intl.NumberFormat(LANG === 'ar' ? 'ar-TN' : 'en-US').format(Number(v || 0)); }
+    function formatTime(dateStr){
+      if(!dateStr) return '—';
+      const d = new Date(dateStr);
+      if(Number.isNaN(d.getTime())) return '—';
+      return new Intl.DateTimeFormat(LANG === 'ar' ? 'ar-TN' : 'en-US', {dateStyle:'medium', timeStyle:'short'}).format(d);
+    }
+    function formatRemaining(seconds){
+      seconds = Math.max(0, parseInt(seconds || 0, 10));
+      const days = Math.floor(seconds / 86400); seconds %= 86400;
+      const hours = Math.floor(seconds / 3600); seconds %= 3600;
+      const minutes = Math.floor(seconds / 60); const secs = seconds % 60;
+      if (LANG === 'ar'){
+        if (days) return `${days} يوم ${hours} ساعة`;
+        if (hours) return `${hours} ساعة ${minutes} دقيقة`;
+        if (minutes) return `${minutes} دقيقة ${secs} ثانية`;
+        return `${secs} ثانية`;
+      }
+      if (days) return `${days} day ${hours} hr`;
+      if (hours) return `${hours} hr ${minutes} min`;
+      if (minutes) return `${minutes} min ${secs} sec`;
+      return `${secs} sec`;
+    }
+  </script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

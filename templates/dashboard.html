@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% set title = t('account_title') %}
+{% block content %}
+<section class="hero">
+  <div class="eyebrow">👋 {{ t('account_title') }}</div>
+  <h1>{{ current_user.user.display_name if current_user else t('no_user') }}</h1>
+  <p class="muted" style="max-width:760px; margin-top:12px">{{ t('instructions') }}</p>
+  <div class="actions">
+    <a class="btn" href="{{ url_for('daily_page') }}">{{ t('daily_reward') }}</a>
+    <a class="btn secondary" href="{{ url_for('transfer_page') }}">{{ t('transfer') }}</a>
+    <a class="btn secondary" href="{{ url_for('leaderboard_page') }}">{{ t('top_money') }}</a>
+  </div>
+</section>
+
+<section class="two-col">
+  <div class="card">
+    <h3>{{ t('profile_title') }}</h3>
+    <p class="muted">{{ t('profile_desc') }}</p>
+
+    <div class="profile" style="border-bottom:none; padding:18px 0 0">
+      <img class="avatar" src="{{ current_user.user.avatar_url if current_user else 'https://cdn.discordapp.com/embed/avatars/0.png' }}" alt="avatar">
+      <div>
+        <div class="name" style="font-size:1.2rem">{{ current_user.user.display_name if current_user else '—' }}</div>
+        <div class="meta">@{{ current_user.user.username if current_user and current_user.user.username else '—' }}</div>
+      </div>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat"><div class="k">{{ t('username') }}</div><div class="v">{{ current_user.discord_id if current_user else '—' }}</div></div>
+      <div class="stat"><div class="k">{{ t('username') }}</div><div class="v">@{{ current_user.user.username if current_user and current_user.user.username else '—' }}</div></div>
+      <div class="stat"><div class="k">{{ t('role') }}</div><div class="v">{{ current_user.role if current_user else '—' }}</div></div>
+      <div class="stat"><div class="k">{{ t('rank') }}</div><div class="v">{{ current_user.rank if current_user else '—' }}</div></div>
+      <div class="stat"><div class="k">{{ t('balance') }}</div><div class="v">{{ current_user.balance|fmt_money if current_user else '0' }}</div></div>
+      <div class="stat"><div class="k">{{ t('last_daily') }}</div><div class="v">{{ current_user.lastDaily|fmt_time if current_user else '—' }}</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>{{ t('daily_reward') }}</h3>
+    <p class="muted">{{ t('daily_desc') }}</p>
+
+    <div class="stack" style="margin-top:16px">
+      <div class="kv">
+        <div class="k">{{ t('daily_status') }}</div>
+        <div class="v" id="dailyStatus">{{ t('daily_available') if current_user and current_user.daily_available else t('daily_unavailable') }}</div>
+      </div>
+      <div class="kv">
+        <div class="k">{{ t('remaining') }}</div>
+        <div class="v" id="dailyRemaining">{{ '0' }}</div>
+      </div>
+      <div class="kv">
+        <div class="k">{{ t('daily_reward') }}</div>
+        <div class="v">{{ daily_reward if daily_reward is defined else 100 }}</div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn" id="claimBtn">{{ t('claim_daily') }}</button>
+      <a class="btn secondary" href="{{ url_for('profile_page') }}">{{ t('profile') }}</a>
+    </div>
+
+    <div id="dailyNotice" class="notice">{{ t('daily_desc') }}</div>
+  </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script>
+  let remainingSeconds = {{ current_user.daily_remaining if current_user else 0 }};
+  let timer = null;
+
+  function showNotice(text, kind=''){
+    const el = document.getElementById('dailyNotice');
+    if (!el) return;
+    el.className = 'notice' + (kind ? ` ${kind}` : '');
+    el.textContent = text;
+  }
+
+  function renderCountdown(){
+    const el = document.getElementById('dailyRemaining');
+    const btn = document.getElementById('claimBtn');
+    const status = document.getElementById('dailyStatus');
+    if (!el || !btn || !status) return;
+
+    if (remainingSeconds <= 0){
+      el.textContent = tr('daily_available');
+      status.textContent = tr('daily_available');
+      btn.disabled = false;
+      return;
+    }
+
+    el.textContent = formatRemaining(remainingSeconds);
+    status.textContent = tr('daily_unavailable');
+    btn.disabled = true;
+    if (timer) clearInterval(timer);
+
+    timer = setInterval(() => {
+      remainingSeconds = Math.max(0, remainingSeconds - 1);
+      el.textContent = remainingSeconds > 0 ? formatRemaining(remainingSeconds) : tr('daily_available');
+      if (remainingSeconds <= 0){
+        status.textContent = tr('daily_available');
+        btn.disabled = false;
+        clearInterval(timer);
+      }
+    }, 1000);
+  }
+
+  async function claimDaily(){
+    const res = await fetch('/api/daily-claim', { method: 'POST' });
+    const data = await res.json();
+    if (data.error){
+      showNotice(data.error, 'err');
+      if (typeof data.remaining_seconds === 'number') {
+        remainingSeconds = data.remaining_seconds;
+        renderCountdown();
+      }
+      return;
+    }
+    showNotice(data.message || tr('daily_success'), 'ok');
+    remainingSeconds = data.remaining_seconds || 86400;
+    renderCountdown();
+    window.location.reload();
+  }
+
+  document.getElementById('claimBtn').addEventListener('click', claimDaily);
+  renderCountdown();
+</script>
+{% endblock %}

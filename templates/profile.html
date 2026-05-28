@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% set title = t('profile_title') %}
+{% block content %}
+<section class="hero">
+  <div class="eyebrow">🪪 {{ t('profile_title') }}</div>
+  <h1>{{ current_user.user.display_name if current_user else t('no_user') }}</h1>
+  <p class="muted" style="max-width:760px; margin-top:12px">{{ t('profile_desc') }}</p>
+</section>
+
+<section class="card">
+  <h3>{{ t('profile_title') }}</h3>
+  <div class="two-col" style="margin-top:16px">
+    <div class="profile" style="border-bottom:none; padding:0">
+      <img class="avatar" src="{{ current_user.user.avatar_url if current_user else 'https://cdn.discordapp.com/embed/avatars/0.png' }}" alt="avatar">
+      <div>
+        <div class="name" style="font-size:1.25rem">{{ current_user.user.display_name if current_user else '—' }}</div>
+        <div class="meta">@{{ current_user.user.username if current_user and current_user.user.username else '—' }}</div>
+      </div>
+    </div>
+
+    <div class="stack">
+      <div class="kv"><div class="k">{{ t('username') }}</div><div class="v">{{ current_user.discord_id if current_user else '—' }}</div></div>
+      <div class="kv"><div class="k">{{ t('username') }}</div><div class="v">@{{ current_user.user.username if current_user and current_user.user.username else '—' }}</div></div>
+      <div class="kv"><div class="k">{{ t('role') }}</div><div class="v">{{ current_user.role if current_user else '—' }}</div></div>
+      <div class="kv"><div class="k">{{ t('balance') }}</div><div class="v">{{ current_user.balance|fmt_money if current_user else '0' }}</div></div>
+      <div class="kv"><div class="k">{{ t('rank') }}</div><div class="v">{{ current_user.rank if current_user else '—' }}</div></div>
+      <div class="kv"><div class="k">{{ t('last_daily') }}</div><div class="v">{{ current_user.lastDaily|fmt_time if current_user else '—' }}</div></div>
+    </div>
+  </div>
+</section>
+{% endblock %}
