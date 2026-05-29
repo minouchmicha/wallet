@@ -1,0 +1,312 @@
+{% extends "base.html" %}
+{% set title = t('account_title') %}
+
+{% block content %}
+<section class="hero">
+  <div class="eyebrow">👋 {{ t('account_title') }}</div>
+
+  <h1>
+    {{ current_user.user.display_name if current_user else t('no_user') }}
+  </h1>
+
+  <p class="muted" style="max-width:760px; margin-top:12px">
+    {{ t('instructions') }}
+  </p>
+
+  <div class="actions">
+    <a class="btn" href="{{ url_for('daily_page') }}">
+      {{ t('daily_reward') }}
+    </a>
+
+    <a class="btn secondary" href="{{ url_for('transfer_page') }}">
+      {{ t('transfer') }}
+    </a>
+
+    <a class="btn secondary" href="{{ url_for('leaderboard_page') }}">
+      {{ t('top_money') }}
+    </a>
+  </div>
+</section>
+
+<section class="two-col">
+  <div class="card">
+    <h3>{{ t('profile_title') }}</h3>
+
+    <p class="muted">
+      {{ t('profile_desc') }}
+    </p>
+
+    <div class="profile" style="border-bottom:none; padding:18px 0 0">
+      <img
+        class="avatar"
+        src="{{ current_user.user.avatar_url if current_user else 'https://cdn.discordapp.com/embed/avatars/0.png' }}"
+        alt="avatar"
+      >
+
+      <div>
+        <div class="name" style="font-size:1.2rem">
+          {{ current_user.user.display_name if current_user else '—' }}
+        </div>
+
+        <div class="meta">
+          @{{ current_user.user.username if current_user and current_user.user.username else '—' }}
+        </div>
+      </div>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat">
+        <div class="k">{{ t('username') }}</div>
+        <div class="v">
+          {{ current_user.discord_id if current_user else '—' }}
+        </div>
+      </div>
+
+      <div class="stat">
+        <div class="k">{{ t('username') }}</div>
+        <div class="v">
+          @{{ current_user.user.username if current_user and current_user.user.username else '—' }}
+        </div>
+      </div>
+
+      <div class="stat">
+        <div class="k">{{ t('rank') }}</div>
+        <div class="v">
+          #{{ current_user.rank if current_user else '—' }}
+        </div>
+      </div>
+
+      <div class="stat">
+        <div class="k">{{ t('balance') }}</div>
+        <div class="v">
+          {{ current_user.balance|fmt_money if current_user else '0' }}
+        </div>
+      </div>
+
+      <div class="stat">
+        <div class="k">{{ t('last_daily') }}</div>
+        <div class="v" id="lastDailyText">—</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>{{ t('daily_reward') }}</h3>
+
+    <p class="muted">
+      {{ t('daily_desc') }}
+    </p>
+
+    <div class="stack" style="margin-top:16px">
+      <div class="kv">
+        <div class="k">{{ t('daily_status') }}</div>
+
+        <div class="v" id="dailyStatus">
+          {{
+            t('daily_available')
+            if current_user and current_user.daily_available
+            else t('daily_unavailable')
+          }}
+        </div>
+      </div>
+
+      <div class="kv">
+        <div class="k">{{ t('remaining') }}</div>
+
+        <div class="v" id="dailyRemaining">
+          {{
+            current_user.daily_remaining|fmt_duration
+            if current_user
+            else '0s'
+          }}
+        </div>
+      </div>
+
+      <div class="kv">
+        <div class="k">{{ t('daily_reward') }}</div>
+
+        <div class="v">
+          {{ daily_reward if daily_reward is defined else 100 }}
+        </div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn" id="claimBtn">
+        {{ t('claim_daily') }}
+      </button>
+
+      <a class="btn secondary" href="{{ url_for('profile_page') }}">
+        {{ t('profile') }}
+      </a>
+    </div>
+
+    <div id="dailyNotice" class="notice">
+      {{ t('daily_desc') }}
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  let remainingSeconds = Number({{ current_user.daily_remaining if current_user else 0 }}) || 0;
+  let timer = null;
+
+  const DAILY_AVAILABLE = {{ t('daily_available') | tojson }};
+  const DAILY_UNAVAILABLE = {{ t('daily_unavailable') | tojson }};
+  const DAILY_SUCCESS = {{ t('daily_success') | tojson }};
+
+  function showNotice(text, kind = '') {
+    const el = document.getElementById('dailyNotice');
+    if (!el) return;
+    el.className = 'notice' + (kind ? ` ${kind}` : '');
+    el.textContent = text;
+  }
+
+  function formatRemaining(seconds) {
+    seconds = Math.max(0, Number(seconds) || 0);
+
+    const days = Math.floor(seconds / 86400);
+    let rem = seconds % 86400;
+    const hours = Math.floor(rem / 3600);
+    rem %= 3600;
+    const minutes = Math.floor(rem / 60);
+    const secs = rem % 60;
+
+    if (days > 0) return `${days}d ${hours}h`;
+    if (hours > 0) return `${hours}h ${minutes}m`;
+    if (minutes > 0) return `${minutes}m ${secs}s`;
+    return `${secs}s`;
+  }
+
+  function formatDatePretty(dateString) {
+    if (!dateString) return '—';
+
+    let raw = String(dateString).trim();
+    if (!raw) return '—';
+
+    raw = raw.replace(' ', 'T');
+    if (!raw.endsWith('Z') && !raw.includes('+') && !raw.includes('-', 10)) {
+      raw += 'Z';
+    }
+
+    const date = new Date(raw);
+    if (isNaN(date.getTime())) return '—';
+
+    return date.toLocaleString(
+      '{{ "ar-SA" if lang == "ar" else "en-US" }}',
+      {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      }
+    );
+  }
+
+  function renderCountdown() {
+    const el = document.getElementById('dailyRemaining');
+    const btn = document.getElementById('claimBtn');
+    const status = document.getElementById('dailyStatus');
+    if (!el || !btn || !status) return;
+
+    if (timer) {
+      clearInterval(timer);
+      timer = null;
+    }
+
+    if (remainingSeconds <= 0) {
+      el.textContent = DAILY_AVAILABLE;
+      status.textContent = DAILY_AVAILABLE;
+      btn.disabled = false;
+      return;
+    }
+
+    el.textContent = formatRemaining(remainingSeconds);
+    status.textContent = DAILY_UNAVAILABLE;
+    btn.disabled = true;
+
+    timer = setInterval(() => {
+      remainingSeconds = Math.max(0, remainingSeconds - 1);
+
+      if (remainingSeconds <= 0) {
+        el.textContent = DAILY_AVAILABLE;
+        status.textContent = DAILY_AVAILABLE;
+        btn.disabled = false;
+        clearInterval(timer);
+        timer = null;
+        return;
+      }
+
+      el.textContent = formatRemaining(remainingSeconds);
+    }, 1000);
+  }
+
+  async function claimDaily() {
+    const btn = document.getElementById('claimBtn');
+    if (btn) btn.disabled = true;
+
+    try {
+      const res = await fetch('/api/daily-claim', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || data.error) {
+        showNotice(data.error || 'Error', 'err');
+
+        if (typeof data.remaining_seconds === 'number') {
+          remainingSeconds = data.remaining_seconds;
+          renderCountdown();
+        } else if (btn) {
+          btn.disabled = false;
+        }
+
+        return;
+      }
+
+      showNotice(data.message || DAILY_SUCCESS, 'ok');
+
+      if (typeof data.remaining_seconds === 'number') {
+        remainingSeconds = data.remaining_seconds;
+      } else {
+        remainingSeconds = 86400;
+      }
+
+      renderCountdown();
+      window.location.reload();
+    } catch (err) {
+      showNotice(err?.message || 'Network error', 'err');
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  const claimBtn = document.getElementById('claimBtn');
+  if (claimBtn) {
+    claimBtn.addEventListener('click', claimDaily);
+  }
+
+  renderCountdown();
+
+  const lastDailyEl = document.getElementById('lastDailyText');
+
+if (lastDailyEl) {
+  const rawLastDaily = "{{ current_user.daily_next_at if current_user and current_user.daily_next_at else '' }}";
+
+  if (rawLastDaily && rawLastDaily !== 'None') {
+    const fixedDate = rawLastDaily.replace(' ', 'T');
+
+    lastDailyEl.textContent = formatDatePretty(fixedDate);
+  } else {
+    lastDailyEl.textContent = '—';
+  }
+}
+</script>
+{% endblock %}

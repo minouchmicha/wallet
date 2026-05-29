@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% set title = t('login_title') %}
+{% block content %}
+<section class="two-col">
+  <div class="card">
+    <h3>{{ t('login_title') }}</h3>
+    <p class="muted">{{ t('login_desc') }}</p>
+
+    <div class="field">
+      <label for="linkCode">{{ t('code_label') }}</label>
+      <input id="linkCode" placeholder="{{ t('code_placeholder') }}" autocomplete="off" />
+    </div>
+
+    <div class="actions">
+      <button class="btn" id="loginBtn">{{ t('login_submit') }}</button>
+      <a class="btn secondary" href="{{ url_for('index') }}">{{ t('site_name') }}</a>
+    </div>
+
+    <div id="loginNotice" class="notice">{{ t('login_desc') }}</div>
+  </div>
+
+  <div class="card">
+    <h3>{{ t('home_title') }}</h3>
+    <p class="muted">{{ t('instructions') }}</p>
+    <div class="stat-grid">
+      <div class="stat"><div class="k">01</div><div class="v">{{ t('login_btn') }}</div></div>
+      <div class="stat"><div class="k">02</div><div class="v">{{ t('dashboard_btn') }}</div></div>
+      <div class="stat"><div class="k">03</div><div class="v">{{ t('daily_reward') }}</div></div>
+      <div class="stat"><div class="k">04</div><div class="v">{{ t('top_money') }}</div></div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script>
+  async function api(path, method='GET', body=null){
+    const opts = { method, headers: {} };
+    if (body){
+      opts.headers['Content-Type'] = 'application/json';
+      opts.body = JSON.stringify(body);
+    }
+    const res = await fetch(path, opts);
+    return await res.json();
+  }
+
+  function showNotice(text, kind=''){
+    const el = document.getElementById('loginNotice');
+    if (!el) return;
+    el.className = 'notice' + (kind ? ` ${kind}` : '');
+    el.textContent = text;
+  }
+
+  async function loginWithCode(){
+    const code = (document.getElementById('linkCode').value || '').trim();
+    if (!code){
+      showNotice(tr('login_error'), 'err');
+      return;
+    }
+    const data = await api('/api/login-link', 'POST', { code });
+    if (data.error){
+      showNotice(data.error, 'err');
+      return;
+    }
+    showNotice(data.message || tr('login_success'), 'ok');
+    setTimeout(() => window.location.href = "{{ url_for('dashboard') }}", 450);
+  }
+
+  document.getElementById('loginBtn').addEventListener('click', loginWithCode);
+  document.getElementById('linkCode').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') loginWithCode();
+  });
+</script>
+{% endblock %}

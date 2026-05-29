@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container my-5" style="direction: {% if lang == 'ar' %}rtl{% else %}ltr{% endif %}; text-align: start;">
+  <div class="d-flex align-items-center mb-4">
+    <div class="me-3 ms-3">
+      <h2 class="fw-bold m-0">{{ t('logs_title') }}</h2>
+      <p class="text-muted m-0">{{ t('logs_desc') }}</p>
+    </div>
+  </div>
+
+  <div class="card shadow-sm border-0 bg-dark text-white">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-dark table-hover m-0 align-middle">
+          <thead>
+            <tr class="text-muted border-secondary">
+              <th scope="col" class="px-4 py-3">{{ t('log_amount') }}</th>
+              <th scope="col" class="py-3">{{ t('log_description') }}</th>
+              <th scope="col" class="px-4 py-3 text-end">{{ t('log_date') }}</th>
+            </tr>
+          </thead>
+          <tbody id="logs-container">
+            <tr>
+              <td colspan="3" class="text-center py-4 text-muted">
+                <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+                Loading...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', async () => {
+    try {
+      const response = await fetch('/api/logs');
+      const data = await response.json();
+      const container = document.getElementById('logs-container');
+      
+      if (!response.ok || !data.logs || data.logs.length === 0) {
+        container.innerHTML = `<tr><td colspan="3" class="text-center py-4 text-muted">{{ t('no_logs') }}</td></tr>`;
+        return;
+      }
+
+      container.innerHTML = data.logs.map(log => {
+        // تحديد اللون بناءً على قيمة color القادمة من السيرفر
+        const badgeColor = log.color === 'red' ? 'text-danger fw-bold' : 'text-success fw-bold';
+        const formattedDate = new Date(log.created_at).toLocaleString('{{ lang }}', {
+          dateStyle: 'short',
+          timeStyle: 'short'
+        });
+
+        return `
+          <tr class="border-secondary">
+            <td class="px-4 py-3 ${badgeColor}" style="font-size: 1.1rem; white-space: nowrap;">
+              ${log.amount_text}
+            </td>
+            <td class="py-3 text-white-50">
+              ${log.description}
+            </td>
+            <td class="px-4 py-3 text-end text-muted" style="font-size: 0.9rem;">
+              ${formattedDate}
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+    } catch (err) {
+      console.error(err);
+      document.getElementById('logs-container').innerHTML = `<tr><td colspan="3" class="text-center py-4 text-danger">Error loading transaction history.</td></tr>`;
+    }
+  });
+</script>
+{% endblock %}
